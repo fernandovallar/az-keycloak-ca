@@ -31,8 +31,9 @@ resource keycloakApp 'Microsoft.App/containerApps@2024-03-01' = {
   properties: {
     managedEnvironmentId: managedEnvironmentId
     configuration: {
+      activeRevisionsMode:'Single'
       ingress: {
-        transport:'http'
+        transport: 'Http'
         external: true
         targetPort: 8080
         allowInsecure: false
@@ -69,7 +70,7 @@ resource keycloakApp 'Microsoft.App/containerApps@2024-03-01' = {
             'sh', '-c'
           ]
           args: [
-            '/opt/keycloak/bin/kc.sh build && /opt/keycloak/bin/kc.sh start'
+            '/opt/keycloak/bin/kc.sh build && /opt/keycloak/bin/kc.sh start --optimized --http-port=8080 --http-management-port=9000'
           ]
           env: [
             // Database Configuration
@@ -96,7 +97,7 @@ resource keycloakApp 'Microsoft.App/containerApps@2024-03-01' = {
             }
             {
               name: 'KEYCLOAK_ADMIN_PASSWORD'
-              secretRef: keycloakAdminPassword
+              secretRef: 'keycloak-admin-password'
             }
             // Network and Proxy Configuration
             {
@@ -147,7 +148,7 @@ resource keycloakApp 'Microsoft.App/containerApps@2024-03-01' = {
               type: 'Liveness'
               httpGet: {
                 path: '/health/live'
-                port: 8080
+                port: 9000
                 scheme: 'HTTP'
               }
               initialDelaySeconds: 60
@@ -159,13 +160,13 @@ resource keycloakApp 'Microsoft.App/containerApps@2024-03-01' = {
               type: 'Readiness'
               httpGet: {
                 path: '/health/ready'
-                port: 8080
+                port: 9000
                 scheme: 'HTTP'
               }
-              initialDelaySeconds: 30
+              initialDelaySeconds: 60
               periodSeconds: 10
               timeoutSeconds: 5
-              failureThreshold: 3
+              failureThreshold: 8
             }
           ]
         }
